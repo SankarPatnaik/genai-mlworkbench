@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+.env
+
+# Node.js
+node_modules/
+dist/
+.eslintcache
+
+# Databases & local state
+mlflow/
+*.db
+.qdrant/
+.chroma/
+.idea/
+.vscode/
+.DS_Store

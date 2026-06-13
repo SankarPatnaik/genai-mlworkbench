@@ -1,0 +1,46 @@
+import mlflow
+from typing import Dict, Any
+from app.config import settings
+
+class MLflowService:
+    def __init__(self):
+        try:
+            mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
+            mlflow.set_experiment("GenAI_Workbench_Agents")
+        except Exception as e:
+            print(f"Failed to connect to MLflow: {e}. Logging runs in local fallback directory.")
+
+    def log_run(self, params: Dict[str, Any], metrics: Dict[str, Any], tags: Dict[str, Any] = None) -> str:
+        """
+        Logs a single RAG or Agent generation turn to MLflow.
+        Returns the MLflow Run ID.
+        """
+        run_id = "local_mock_run"
+        try:
+            with mlflow.start_run() as run:
+                run_id = run.info.run_id
+                
+                # Log general parameters
+                mlflow.log_params(params)
+                
+                # Log operational metrics
+                mlflow.log_metrics(metrics)
+                
+                # Log tags
+                if tags:
+                    mlflow.set_tags(tags)
+                    
+            return run_id
+        except Exception as e:
+            print(f"MLflow Run Logging failed: {e}")
+            return run_id
+
+    def get_run_url(self, run_id: str) -> str:
+        """
+        Gets direct URL link to MLflow tracking panel.
+        """
+        if run_id == "local_mock_run":
+            return "#mlflow-local-not-running"
+        return f"{settings.MLFLOW_TRACKING_URI}/#/experiments/0/runs/{run_id}"
+
+mlflow_service = MLflowService()
