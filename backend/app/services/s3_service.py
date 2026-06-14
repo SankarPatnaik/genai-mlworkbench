@@ -1,4 +1,5 @@
 import io
+import re
 import boto3
 from botocore.exceptions import ClientError
 from app.config import settings
@@ -27,19 +28,26 @@ class S3Service:
             except Exception as e:
                 print(f"Error creating bucket '{self.bucket_name}': {e}. Continuing locally.")
 
-    def upload_file(self, file_content: bytes, filename: str) -> str:
+    def is_available(self) -> bool:
+        try:
+            self.s3_client.head_bucket(Bucket=self.bucket_name)
+            return True
+        except Exception:
+            return False
+
+    def upload_file(self, file_content: bytes, object_key: str) -> str:
         """
         Uploads file to S3 and returns file URI/key.
         """
         try:
             self.s3_client.put_object(
                 Bucket=self.bucket_name,
-                Key=filename,
+                Key=object_key,
                 Body=file_content
             )
-            return f"s3://{self.bucket_name}/{filename}"
+            return f"s3://{self.bucket_name}/{object_key}"
         except Exception as e:
-            raise RuntimeError(f"Failed to upload {filename} to S3: {e}")
+            raise RuntimeError(f"Failed to upload object to S3: {e}")
 
     def download_file(self, filename: str) -> bytes:
         """
@@ -56,7 +64,7 @@ class S3Service:
         Mock implementation of PDF converter. For a production RAG:
         - If already PDF: extract text using PdfReader.
         - If HTML/Markdown/TXT: parse and return clean plain text.
-        - If DOCX/PPTX: convert to PDF headless then read out.
+        - If DOCX/PPTX: add a real document parser before enabling in the UI.
         """
         ext = filename.split(".")[-1].lower()
         
@@ -73,13 +81,15 @@ class S3Service:
         elif ext in ["txt", "md", "csv"]:
             return content.decode("utf-8", errors="ignore")
             
-        elif ext in ["docx", "pptx", "html"]:
-            # In complete production version, you would run libreoffice headless:
-            # subprocess.run(["libreoffice", "--headless", "--convert-to", "pdf", ...])
-            # For this boilerplate, we simulate conversion by parsing textual content:
-            return f"[Converted {ext.upper()} Metadata & Content]\n{content.decode('utf-8', errors='ignore')}"
+        elif ext == "html":
+            return content.decode("utf-8", errors="ignore")
             
         else:
             raise ValueError(f"Unsupported document format: .{ext}")
+
+def safe_filename(filename: str) -> str:
+    name = filename.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+    name = re.sub(r"[^A-Za-z0-9._-]+", "_", name).strip("._")
+    return name or "document"
 
 s3_service = S3Service()

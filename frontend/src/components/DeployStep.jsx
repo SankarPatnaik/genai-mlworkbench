@@ -1,9 +1,11 @@
 import React from 'react';
 import { Terminal, Code, MessageSquare, ShieldAlert } from 'lucide-react';
+import { API_BASE_URL } from '../api';
 
 export default function DeployStep({ data }) {
-  const curlCode = `curl -X POST "http://localhost:8000/api/v1/query" \\
+  const curlCode = `curl -X POST "${API_BASE_URL}/api/v1/query" \\
   -H "Content-Type: application/json" \\
+  -H "X-API-Key: <your-workbench-api-key>" \\
   -d '{
     "document_id": "${data.documentId || 'document_name'}",
     "index_name": "${data.indexName || 'workbench-index'}",
@@ -11,11 +13,11 @@ export default function DeployStep({ data }) {
     "query": "What is the policy limit?",
     "framework": "${data.framework || 'google_sdk'}",
     "system_instruction": "Answer using the context provided...",
-    "llm_model": "${data.llmModel || 'gemini-3.5-flash'}"
+    "llm_model": "${data.llmModel || 'local-preview'}"
   }'`;
 
   const widgetCode = `<script 
-  src="http://localhost:8000/static/widget.js" 
+  src="${API_BASE_URL}/static/widget.js"
   data-agent-id="${data.documentId || 'agent-id'}"
   data-theme-color="#6366f1"
   async>
@@ -50,7 +52,7 @@ export default function DeployStep({ data }) {
           No-Code Web Widget Embed
         </h2>
         <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem', marginBottom: '1rem' }}>
-          Copy-paste this script element into the header of any HTML page to embed a responsive floating chat assistant bubble.
+          Widget delivery is a rollout milestone. Add this script after the backend exposes /static/widget.js and token-scoped agent IDs.
         </p>
         <pre style={{ 
           background: 'rgba(0, 0, 0, 0.3)', 
@@ -80,14 +82,14 @@ export default function DeployStep({ data }) {
           <div style={{ padding: '1rem', background: 'var(--secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
             <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>Slack App Connection</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
-              Configure a webhook redirecting Slack events to <code>/api/v1/integrations/slack</code>.
+              Planned connector: route Slack events through a signed <code>/api/v1/integrations/slack</code> endpoint.
             </div>
           </div>
 
           <div style={{ padding: '1rem', background: 'var(--secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
             <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.25rem' }}>Discord Bot Token</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
-              Add a bot application on the Discord portal, and paste the Token under keys configuration.
+              Planned connector: store bot tokens in a server-side secret vault before enabling workspace installs.
             </div>
           </div>
         </div>
@@ -106,7 +108,7 @@ export default function DeployStep({ data }) {
           <div>
             <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--foreground)' }}>Developer Code Export</div>
             <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '0.25rem' }}>
-              Download complete executable code mapping your exact database parameters, MLflow run configurations and system prompt to custom LangGraph Python scripts.
+              Export should generate tenant-scoped code after auth, provider keys, and deployment targets are configured.
             </div>
           </div>
         </div>

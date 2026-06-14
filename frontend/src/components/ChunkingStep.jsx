@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, RefreshCw } from 'lucide-react';
+import { apiHeaders, apiUrl, parseApiError } from '../api';
 
 export default function ChunkingStep({ data, updateData }) {
   const [method, setMethod] = useState(data.chunkMethod || 'recursive');
@@ -31,9 +32,9 @@ export default function ChunkingStep({ data, updateData }) {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/chunk", {
+      const response = await fetch(apiUrl("/api/v1/chunk"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           document_id: data.documentId,
           method,
@@ -42,7 +43,7 @@ export default function ChunkingStep({ data, updateData }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to partition document chunks");
+        throw new Error(await parseApiError(response, "Failed to partition document chunks"));
       }
 
       const result = await response.json();

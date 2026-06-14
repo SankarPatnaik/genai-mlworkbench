@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Send, BarChart2, FileSymlink, ExternalLink } from 'lucide-react';
+import { apiHeaders, apiUrl, parseApiError } from '../api';
 
 export default function PlaygroundStep({ data }) {
   const [messages, setMessages] = useState([
@@ -20,9 +21,9 @@ export default function PlaygroundStep({ data }) {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/query", {
+      const response = await fetch(apiUrl("/api/v1/query"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           document_id: data.documentId || "",
           index_name: data.indexName || "workbench-index",
@@ -30,7 +31,7 @@ export default function PlaygroundStep({ data }) {
           query: input,
           framework: data.framework || "google_sdk",
           system_instruction: data.systemInstruction || "",
-          llm_model: data.llmModel || "gemini-3.5-flash",
+          llm_model: data.llmModel || "local-preview",
           top_k: data.topK || 3,
           embedding_model: data.embeddingModel || "default",
           temperature: data.temperature || 0.7
@@ -38,7 +39,7 @@ export default function PlaygroundStep({ data }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to process query response");
+        throw new Error(await parseApiError(response, "Failed to process query response"));
       }
 
       const result = await response.json();

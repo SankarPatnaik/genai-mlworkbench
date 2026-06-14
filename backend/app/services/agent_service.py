@@ -150,7 +150,7 @@ class AgentService:
         # Async run handler for the SDK
         async def run_sdk():
             config = LocalAgentConfig(
-                model=model if model else "gemini-3.5-flash",
+                model=model if model else "local-preview",
                 system_instructions=system
             )
             steps.append("[GoogleSDK Agent] Starting conversational connection...")

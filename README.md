@@ -84,6 +84,12 @@ AWS_REGION=us-east-1
 S3_ENDPOINT_URL=http://localhost:9000
 S3_BUCKET_NAME=genai-workbench-docs
 
+# Commercial rollout controls
+API_KEY=change-me-before-deploy
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+MAX_UPLOAD_MB=50
+ENVIRONMENT=development
+
 # MLflow Configurations
 MLFLOW_TRACKING_URI=http://localhost:5000
 ```
@@ -105,3 +111,19 @@ npm install
 npm run dev
 ```
 Open your browser to `http://localhost:3000` to interact with the dashboard.
+
+For non-local environments, create `frontend/.env`:
+```env
+VITE_API_BASE_URL=https://your-api-domain.example
+VITE_WORKBENCH_API_KEY=change-me-before-deploy
+```
+
+---
+
+## Rollout Notes
+
+- API-key protection is enabled when `API_KEY` is set on the backend. Replace this with user authentication and tenant-scoped authorization before public SaaS launch.
+- Uploaded documents now receive generated document IDs and namespaced object keys to avoid filename collisions.
+- Vector indexes validate collection names and filter retrieval by `document_id` to avoid cross-document leakage.
+- The current runtime ships local preview embeddings and mock LLM responses. Hosted model adapters should be added with key vaulting, usage limits, audit logs, and billing controls.
+- DOCX/PPTX, Slack, Discord, and web widget delivery are treated as planned connectors until their backend endpoints are implemented.

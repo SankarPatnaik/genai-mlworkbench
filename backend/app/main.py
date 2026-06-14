@@ -1,14 +1,19 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+import secrets
+import uuid
+from datetime import datetime, timezone
+
+from fastapi import Depends, FastAPI, Header, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 
 # Service imports
 from app.config import settings
-from app.services.s3_service import s3_service
+from app.services.s3_service import s3_service, safe_filename
 from app.services.chunking_service import chunking_service
-from app.services.vector_service import VectorServiceFactory
+from app.services.vector_service import VectorServiceFactory, validate_index_name
 from app.services.agent_service import agent_service
+from app.services.mlflow_service import mlflow_service
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -18,14 +23,20 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=settings.allowed_origins_list,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Simple in-memory session cache for document prototyping
+# Replace this with durable tenant-scoped metadata before horizontal scaling.
 session_store = {}
+
+def require_api_key(x_api_key: Optional[str] = Header(default=None)):
+    if not settings.API_KEY:
+        return
+    if not x_api_key or not secrets.compare_digest(x_api_key, settings.API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
 # Pydantic schemas for structured requests
 class ChunkRequest(BaseModel):
@@ -36,7 +47,7 @@ class ChunkRequest(BaseModel):
 class EmbedRequest(BaseModel):
     document_id: str
     vector_db: str = Field(..., description="chroma, qdrant, postgres")
-    index_name: str
+    index_name: str = Field(..., min_length=3, max_length=63)
     embedding_model: str = "default"
     chunks: List[Dict[str, Any]]
 
@@ -47,7 +58,7 @@ class QueryRequest(BaseModel):
     query: str
     framework: str = Field(..., description="langgraph, google_sdk, crewai, direct")
     system_instruction: str
-    llm_model: str = "gemini-3.5-flash"
+    llm_model: str = "local-preview"
     top_k: int = 3
     embedding_model: str = "default"
     temperature: float = 0.7
@@ -62,17 +73,22 @@ def get_service_status():
     Diagnostic route showing check state of S3 and other DB integrations.
     """
     status = {
-        "s3": "connected",
+        "s3": "offline",
         "chroma": "offline",
         "qdrant": "offline",
         "postgres": "offline",
-        "mlflow": "connected"
+        "mlflow": "offline",
+        "auth": "enabled" if settings.API_KEY else "disabled",
+        "environment": settings.ENVIRONMENT,
     }
+
+    if s3_service.is_available():
+        status["s3"] = "connected"
     
     # Chroma
     try:
-        from chromadb.errors import InvalidCollectionException
         client = VectorServiceFactory.get_service("chroma")
+        client.health_check()
         status["chroma"] = "connected"
     except Exception:
         pass
@@ -80,6 +96,7 @@ def get_service_status():
     # Qdrant
     try:
         client = VectorServiceFactory.get_service("qdrant")
+        client.health_check()
         status["qdrant"] = "connected"
     except Exception:
         pass
@@ -87,46 +104,61 @@ def get_service_status():
     # Postgres
     try:
         client = VectorServiceFactory.get_service("postgres")
+        client.health_check()
         status["postgres"] = "connected"
     except Exception:
         pass
 
+    if mlflow_service.is_available():
+        status["mlflow"] = "connected"
+
     return status
 
 @app.post(f"{settings.API_V1_STR}/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(file: UploadFile = File(...), _: None = Depends(require_api_key)):
     """
     Endpoint 1: Upload file, store raw content in S3/MinIO, extract normalized text.
     """
     try:
         contents = await file.read()
+        max_bytes = settings.MAX_UPLOAD_MB * 1024 * 1024
+        if len(contents) > max_bytes:
+            raise HTTPException(status_code=413, detail=f"File exceeds {settings.MAX_UPLOAD_MB}MB upload limit")
+
+        filename = safe_filename(file.filename or "document")
+        document_id = uuid.uuid4().hex
+        object_key = f"documents/{document_id}/{filename}"
         
         # Save to S3/Minio
-        s3_key = s3_service.upload_file(contents, file.filename)
+        s3_key = s3_service.upload_file(contents, object_key)
         
         # Convert and extract text
-        extracted_text = s3_service.convert_to_pdf_text(file.filename, contents)
+        extracted_text = s3_service.convert_to_pdf_text(filename, contents)
+        if not extracted_text.strip():
+            raise ValueError("No readable text was extracted from this document")
         
         # Store metadata in session store
-        document_id = file.filename
         session_store[document_id] = {
             "s3_key": s3_key,
             "text": extracted_text,
-            "filename": file.filename
+            "filename": filename,
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
         
         return {
             "document_id": document_id,
-            "filename": file.filename,
+            "filename": filename,
             "s3_key": s3_key,
             "text_preview": extracted_text[:800],
             "total_characters": len(extracted_text)
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 @app.post(f"{settings.API_V1_STR}/chunk")
-def chunk_document(request: ChunkRequest):
+def chunk_document(request: ChunkRequest, _: None = Depends(require_api_key)):
     """
     Endpoint 2: Retrieve text from document and return chunk metadata and boundary list.
     """
@@ -149,11 +181,15 @@ def chunk_document(request: ChunkRequest):
         raise HTTPException(status_code=500, detail=f"Chunking failed: {str(e)}")
 
 @app.post(f"{settings.API_V1_STR}/embed")
-def embed_document(request: EmbedRequest):
+def embed_document(request: EmbedRequest, _: None = Depends(require_api_key)):
     """
     Endpoint 3: Create vector collections and load chunk embeddings into the DB.
     """
     try:
+        if request.document_id not in session_store:
+            raise HTTPException(status_code=404, detail="Document ID not found in session")
+        validate_index_name(request.index_name)
+
         # Retrieve vector adapter
         vector_db = VectorServiceFactory.get_service(request.vector_db)
         
@@ -163,29 +199,38 @@ def embed_document(request: EmbedRequest):
         # Load and write chunks
         success = vector_db.add_chunks(
             index_name=request.index_name,
+            document_id=request.document_id,
             chunks=request.chunks,
             embedding_model=request.embedding_model
         )
         
         return {
             "index_name": request.index_name,
+            "document_id": request.document_id,
             "vector_db": request.vector_db,
             "chunks_indexed": len(request.chunks),
             "status": "success" if success else "failed"
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Embedding indexing failed: {str(e)}")
 
 @app.post(f"{settings.API_V1_STR}/query")
-def query_agent(request: QueryRequest):
+def query_agent(request: QueryRequest, _: None = Depends(require_api_key)):
     """
     Endpoint 4: Query vector store for top-K chunks and run selected Agent runner.
     """
     try:
+        validate_index_name(request.index_name)
+        if request.top_k < 1 or request.top_k > 20:
+            raise HTTPException(status_code=400, detail="top_k must be between 1 and 20")
+
         # Search relevant context chunks
         vector_db = VectorServiceFactory.get_service(request.vector_db)
         search_results = vector_db.search(
             index_name=request.index_name,
+            document_id=request.document_id,
             query=request.query,
             limit=request.top_k,
             embedding_model=request.embedding_model
@@ -209,6 +254,8 @@ def query_agent(request: QueryRequest):
             "retrieved_chunks": search_results,
             "metrics": agent_response["metrics"]
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Query resolution failed: {str(e)}")
 

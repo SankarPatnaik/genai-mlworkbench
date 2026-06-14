@@ -1,4 +1,5 @@
 import os
+from typing import List
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 load_dotenv()
@@ -8,6 +9,10 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "GenAI Workbench Backend"
     PORT: int = 8000
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+    API_KEY: str = os.getenv("API_KEY", "")
+    MAX_UPLOAD_MB: int = int(os.getenv("MAX_UPLOAD_MB", 50))
+    ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
     
     # LLM Provider Keys
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
@@ -42,5 +47,9 @@ class Settings(BaseSettings):
 
     class Config:
         case_sensitive = True
+
+    @property
+    def allowed_origins_list(self) -> List[str]:
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
 settings = Settings()

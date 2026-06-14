@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Database, CheckCircle, RefreshCw } from 'lucide-react';
+import { apiHeaders, apiUrl, parseApiError } from '../api';
+
+const INDEX_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9_-]{2,62}$/;
 
 export default function VectorStep({ data, updateData }) {
   const [vectorDb, setVectorDb] = useState(data.vectorDb || 'chroma');
@@ -15,15 +18,19 @@ export default function VectorStep({ data, updateData }) {
       setError("Please generate chunk partitions in Step 2 first.");
       return;
     }
+    if (!INDEX_NAME_PATTERN.test(indexName)) {
+      setError("Index names must start with a letter and use only letters, numbers, hyphens, or underscores.");
+      return;
+    }
     
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/embed", {
+      const response = await fetch(apiUrl("/api/v1/embed"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: apiHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           document_id: data.documentId,
           vector_db: vectorDb,
@@ -34,7 +41,7 @@ export default function VectorStep({ data, updateData }) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to index chunks into Vector Database");
+        throw new Error(await parseApiError(response, "Failed to index chunks into Vector Database"));
       }
 
       const result = await response.json();
@@ -76,6 +83,7 @@ export default function VectorStep({ data, updateData }) {
             value={indexName}
             onChange={(e) => setIndexName(e.target.value)}
             placeholder="e.g. corporate-policies"
+            pattern="[A-Za-z][A-Za-z0-9_-]{2,62}"
           />
         </div>
 
@@ -83,10 +91,10 @@ export default function VectorStep({ data, updateData }) {
           <label>Embedding Model</label>
           <select value={embeddingModel} onChange={(e) => setEmbeddingModel(e.target.value)}>
             <option value="default">Local MiniLM-L6 (Default - Free Offline)</option>
-            <option value="gemini">Google Vertex: text-embedding-004</option>
-            <option value="openai">OpenAI: text-embedding-3-small</option>
-            <option value="cohere">Cohere: embed-english-v3.0</option>
           </select>
+          <small style={{ color: 'var(--muted-foreground)' }}>
+            Hosted embedding providers should be enabled after tenant billing, key vaulting and rate limits are in place.
+          </small>
         </div>
 
         <button 

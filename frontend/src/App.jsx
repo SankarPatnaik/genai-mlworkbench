@@ -6,6 +6,7 @@ import VectorStep from './components/VectorStep';
 import AgentStep from './components/AgentStep';
 import PlaygroundStep from './components/PlaygroundStep';
 import DeployStep from './components/DeployStep';
+import { apiUrl, apiHeaders } from './api';
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
@@ -18,9 +19,9 @@ export default function App() {
     vectorDb: 'chroma',
     indexName: 'workbench-index',
     embeddingModel: 'default',
-    framework: 'google_sdk',
+    framework: 'direct',
     systemInstruction: '',
-    llmModel: 'gemini-3.5-flash',
+    llmModel: 'local-preview',
     temperature: 0.7,
     topK: 3,
     indexed: false
@@ -30,7 +31,7 @@ export default function App() {
 
   useEffect(() => {
     // Perform initial backend health check
-    fetch("http://localhost:8000/api/v1/status")
+    fetch(apiUrl("/api/v1/status"), { headers: apiHeaders() })
       .then(res => res.json())
       .then(status => setApiStatus(status))
       .catch(() => setApiStatus(null));

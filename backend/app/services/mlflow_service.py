@@ -43,4 +43,12 @@ class MLflowService:
             return "#mlflow-local-not-running"
         return f"{settings.MLFLOW_TRACKING_URI}/#/experiments/0/runs/{run_id}"
 
+    def is_available(self) -> bool:
+        try:
+            mlflow.get_tracking_uri()
+            mlflow.search_experiments(max_results=1)
+            return True
+        except Exception:
+            return False
+
 mlflow_service = MLflowService()

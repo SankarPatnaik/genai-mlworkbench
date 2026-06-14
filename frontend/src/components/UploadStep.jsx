@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { apiHeaders, apiUrl, parseApiError } from '../api';
 
 export default function UploadStep({ data, updateData, onNext }) {
   const [file, setFile] = useState(null);
@@ -34,13 +35,14 @@ export default function UploadStep({ data, updateData, onNext }) {
     formData.append("file", selectedFile);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/upload", {
+      const response = await fetch(apiUrl("/api/v1/upload"), {
         method: "POST",
+        headers: apiHeaders(),
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error("Failed to upload file");
+        throw new Error(await parseApiError(response, "Failed to upload file"));
       }
 
       const result = await response.json();
@@ -64,7 +66,7 @@ export default function UploadStep({ data, updateData, onNext }) {
       <div className="glass-panel">
         <h2 style={{ marginBottom: '1rem', fontSize: '1.25rem' }}>Upload Document</h2>
         <p style={{ color: 'var(--secondary-foreground)', marginBottom: '2rem' }}>
-          Upload your files (PDF, Word, Markdown, Text, HTML) and we will automatically convert and extract clean text coordinates.
+          Upload PDF, Markdown, Text, HTML, or CSV files and extract clean text for retrieval.
         </p>
 
         <div 
@@ -78,14 +80,14 @@ export default function UploadStep({ data, updateData, onNext }) {
             id="file-input" 
             style={{ display: 'none' }} 
             onChange={handleFileChange}
-            accept=".pdf,.docx,.pptx,.html,.md,.txt,.csv"
+            accept=".pdf,.html,.md,.txt,.csv"
           />
           <Upload size={40} className="primary" style={{ color: 'var(--primary)' }} />
           <div>
             <span style={{ fontWeight: 600 }}>Drag & Drop</span> or click to upload
           </div>
           <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>
-            PDF, DOCX, PPTX, HTML, MD, TXT (Max 50MB)
+            PDF, HTML, MD, TXT, CSV (Max 50MB)
           </span>
         </div>
 
