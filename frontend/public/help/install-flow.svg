@@ -1,0 +1,36 @@
+<svg width="960" height="520" viewBox="0 0 960 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="520" rx="24" fill="#101114"/>
+  <rect x="48" y="52" width="864" height="416" rx="18" fill="#15171c" stroke="#2a2e39"/>
+  <text x="86" y="107" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Workbench Local Installation</text>
+  <text x="86" y="139" fill="#a1a1aa" font-family="Inter, Arial, sans-serif" font-size="16">Start infrastructure, backend API, then the frontend review console.</text>
+  <g transform="translate(86 190)">
+    <rect width="196" height="170" rx="14" fill="#1f2937" stroke="#6366f1"/>
+    <circle cx="42" cy="42" r="20" fill="#6366f1"/>
+    <text x="36" y="49" fill="white" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700">1</text>
+    <text x="28" y="88" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Docker</text>
+    <text x="28" y="118" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14">Neo4j, MinIO,</text>
+    <text x="28" y="140" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14">Chroma, Qdrant</text>
+  </g>
+  <path d="M300 275H374" stroke="#3f4656" stroke-width="4" stroke-linecap="round"/>
+  <path d="M374 275L358 263M374 275L358 287" stroke="#3f4656" stroke-width="4" stroke-linecap="round"/>
+  <g transform="translate(392 190)">
+    <rect width="196" height="170" rx="14" fill="#1f2937" stroke="#10b981"/>
+    <circle cx="42" cy="42" r="20" fill="#10b981"/>
+    <text x="36" y="49" fill="white" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700">2</text>
+    <text x="28" y="88" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Backend API</text>
+    <text x="28" y="118" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14">FastAPI service</text>
+    <text x="28" y="140" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14">on port 8000</text>
+  </g>
+  <path d="M606 275H680" stroke="#3f4656" stroke-width="4" stroke-linecap="round"/>
+  <path d="M680 275L664 263M680 275L664 287" stroke="#3f4656" stroke-width="4" stroke-linecap="round"/>
+  <g transform="translate(698 190)">
+    <rect width="196" height="170" rx="14" fill="#1f2937" stroke="#f59e0b"/>
+    <circle cx="42" cy="42" r="20" fill="#f59e0b"/>
+    <text x="36" y="49" fill="#111827" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700">3</text>
+    <text x="28" y="88" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Frontend</text>
+    <text x="28" y="118" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14">Vite console</text>
+    <text x="28" y="140" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14">on port 3000</text>
+  </g>
+  <rect x="86" y="400" width="792" height="34" rx="8" fill="#0f172a" stroke="#263244"/>
+  <text x="108" y="422" fill="#cbd5e1" font-family="Consolas, monospace" font-size="15">docker compose up -d  →  uvicorn app.main:app  →  npm run dev</text>
+</svg>

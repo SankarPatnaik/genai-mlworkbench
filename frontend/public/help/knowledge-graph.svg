@@ -1,0 +1,43 @@
+<svg width="960" height="520" viewBox="0 0 960 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="520" rx="24" fill="#0b0f14"/>
+  <rect x="56" y="48" width="848" height="424" rx="20" fill="#121821" stroke="#273244"/>
+  <text x="92" y="104" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Context Graph Reduces Waste</text>
+  <text x="92" y="136" fill="#a1a1aa" font-family="Inter, Arial, sans-serif" font-size="16">Workbench links entities, chunks, and documents before the LLM receives context.</text>
+  <g stroke-width="3">
+    <line x1="248" y1="268" x2="396" y2="196" stroke="#475569"/>
+    <line x1="248" y1="268" x2="414" y2="336" stroke="#475569"/>
+    <line x1="396" y1="196" x2="568" y2="256" stroke="#475569"/>
+    <line x1="414" y1="336" x2="568" y2="256" stroke="#475569"/>
+    <line x1="568" y1="256" x2="720" y2="188" stroke="#475569"/>
+    <line x1="568" y1="256" x2="716" y2="342" stroke="#475569"/>
+  </g>
+  <g>
+    <circle cx="248" cy="268" r="58" fill="#1e293b" stroke="#6366f1" stroke-width="4"/>
+    <text x="209" y="263" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Source</text>
+    <text x="209" y="287" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">document</text>
+  </g>
+  <g>
+    <circle cx="396" cy="196" r="50" fill="#16251f" stroke="#10b981" stroke-width="4"/>
+    <text x="363" y="201" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700">Entity</text>
+  </g>
+  <g>
+    <circle cx="414" cy="336" r="50" fill="#16251f" stroke="#10b981" stroke-width="4"/>
+    <text x="381" y="341" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700">Entity</text>
+  </g>
+  <g>
+    <circle cx="568" cy="256" r="64" fill="#241a2f" stroke="#a855f7" stroke-width="4"/>
+    <text x="531" y="251" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Relevant</text>
+    <text x="540" y="276" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">context</text>
+  </g>
+  <g>
+    <circle cx="720" cy="188" r="48" fill="#312414" stroke="#f59e0b" stroke-width="4"/>
+    <text x="691" y="193" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700">Answer</text>
+  </g>
+  <g>
+    <circle cx="716" cy="342" r="48" fill="#2b171b" stroke="#ef4444" stroke-width="4"/>
+    <text x="687" y="338" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700">Filtered</text>
+    <text x="688" y="360" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="12">noise</text>
+  </g>
+  <rect x="92" y="404" width="776" height="36" rx="8" fill="#0f172a" stroke="#263244"/>
+  <text x="114" y="427" fill="#cbd5e1" font-family="Consolas, monospace" font-size="15">Upload → Chunk → Embed → Build Graph → Query with targeted graph context</text>
+</svg>

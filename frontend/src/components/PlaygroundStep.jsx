@@ -9,6 +9,7 @@ export default function PlaygroundStep({ data }) {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [retrievedChunks, setRetrievedChunks] = useState([]);
+  const [graphContext, setGraphContext] = useState(null);
   const [steps, setSteps] = useState([]);
   const [metrics, setMetrics] = useState(null);
 
@@ -34,7 +35,9 @@ export default function PlaygroundStep({ data }) {
           llm_model: data.llmModel || "local-preview",
           top_k: data.topK || 3,
           embedding_model: data.embeddingModel || "default",
-          temperature: data.temperature || 0.7
+          temperature: data.temperature || 0.7,
+          use_graph_context: data.graphEnabled !== false,
+          graph_max_entities: 8
         }),
       });
 
@@ -45,6 +48,7 @@ export default function PlaygroundStep({ data }) {
       const result = await response.json();
       setMessages(prev => [...prev, { sender: 'assistant', text: result.response }]);
       setRetrievedChunks(result.retrieved_chunks || []);
+      setGraphContext(result.graph_context || null);
       setSteps(result.steps || []);
       setMetrics(result.metrics || null);
     } catch (err) {
@@ -126,6 +130,39 @@ export default function PlaygroundStep({ data }) {
         </div>
 
         {/* Retrieved Context Blocks */}
+        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
+          <h2 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
+            <FileSymlink size={18} style={{ color: 'var(--primary)' }} />
+            Graph Context
+          </h2>
+
+          {graphContext && graphContext.entities && graphContext.entities.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '180px', overflowY: 'auto' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', whiteSpace: 'pre-wrap' }}>
+                {graphContext.context_summary || 'Relevant entities found without explicit relationship lines.'}
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {graphContext.entities.slice(0, 8).map((entity) => (
+                  <span key={entity.id} style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--foreground)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.25rem 0.5rem',
+                    background: 'var(--secondary)'
+                  }}>
+                    {entity.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{ color: 'var(--muted-foreground)', textAlign: 'center', fontSize: '0.85rem', padding: '1rem' }}>
+              Build a context graph to prepend compact entity relationships before chunk context.
+            </div>
+          )}
+        </div>
+
         <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <h2 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}>
             <FileSymlink size={18} style={{ color: 'var(--accent)' }} />

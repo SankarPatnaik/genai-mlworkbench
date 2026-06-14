@@ -27,6 +27,8 @@ class S3Service:
                 print(f"Bucket '{self.bucket_name}' created successfully.")
             except Exception as e:
                 print(f"Error creating bucket '{self.bucket_name}': {e}. Continuing locally.")
+        except Exception as e:
+            print(f"S3 storage unavailable: {e}. API will start with storage marked offline.")
 
     def is_available(self) -> bool:
         try:

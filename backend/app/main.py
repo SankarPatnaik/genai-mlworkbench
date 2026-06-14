@@ -14,6 +14,7 @@ from app.services.chunking_service import chunking_service
 from app.services.vector_service import VectorServiceFactory, validate_index_name
 from app.services.agent_service import agent_service
 from app.services.mlflow_service import mlflow_service
+from app.services.knowledge_graph_service import knowledge_graph_service
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -51,6 +52,17 @@ class EmbedRequest(BaseModel):
     embedding_model: str = "default"
     chunks: List[Dict[str, Any]]
 
+class GraphBuildRequest(BaseModel):
+    document_id: str
+    chunks: List[Dict[str, Any]]
+    max_entities_per_chunk: int = 12
+
+class GraphQueryRequest(BaseModel):
+    document_id: str
+    query: str
+    max_entities: int = 8
+    max_chunks: int = 3
+
 class QueryRequest(BaseModel):
     document_id: str
     index_name: str
@@ -62,6 +74,8 @@ class QueryRequest(BaseModel):
     top_k: int = 3
     embedding_model: str = "default"
     temperature: float = 0.7
+    use_graph_context: bool = True
+    graph_max_entities: int = 8
 
 @app.get("/")
 def read_root():
@@ -77,6 +91,7 @@ def get_service_status():
         "chroma": "offline",
         "qdrant": "offline",
         "postgres": "offline",
+        "knowledge_graph": "memory",
         "mlflow": "offline",
         "auth": "enabled" if settings.API_KEY else "disabled",
         "environment": settings.ENVIRONMENT,
@@ -111,6 +126,8 @@ def get_service_status():
 
     if mlflow_service.is_available():
         status["mlflow"] = "connected"
+
+    status["knowledge_graph"] = "neo4j" if knowledge_graph_service.is_available() else "memory"
 
     return status
 
@@ -216,6 +233,49 @@ def embed_document(request: EmbedRequest, _: None = Depends(require_api_key)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Embedding indexing failed: {str(e)}")
 
+@app.post(f"{settings.API_V1_STR}/graph/build")
+def build_knowledge_graph(request: GraphBuildRequest, _: None = Depends(require_api_key)):
+    """
+    Endpoint 4: Build a document-scoped context graph that can reduce retrieval token load.
+    """
+    try:
+        if request.document_id not in session_store:
+            raise HTTPException(status_code=404, detail="Document ID not found in session")
+        if request.max_entities_per_chunk < 3 or request.max_entities_per_chunk > 30:
+            raise HTTPException(status_code=400, detail="max_entities_per_chunk must be between 3 and 30")
+
+        summary = knowledge_graph_service.build_graph(
+            document_id=request.document_id,
+            chunks=request.chunks,
+            max_entities_per_chunk=request.max_entities_per_chunk,
+        )
+        return {"status": "success", **summary}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Knowledge graph build failed: {str(e)}")
+
+@app.post(f"{settings.API_V1_STR}/graph/query")
+def query_knowledge_graph(request: GraphQueryRequest, _: None = Depends(require_api_key)):
+    """
+    Endpoint 5: Query the context graph for compact entity and relationship context.
+    """
+    try:
+        if request.max_entities < 1 or request.max_entities > 30:
+            raise HTTPException(status_code=400, detail="max_entities must be between 1 and 30")
+        if request.max_chunks < 0 or request.max_chunks > 10:
+            raise HTTPException(status_code=400, detail="max_chunks must be between 0 and 10")
+        return knowledge_graph_service.query_context(
+            document_id=request.document_id,
+            query=request.query,
+            max_entities=request.max_entities,
+            max_chunks=request.max_chunks,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Knowledge graph query failed: {str(e)}")
+
 @app.post(f"{settings.API_V1_STR}/query")
 def query_agent(request: QueryRequest, _: None = Depends(require_api_key)):
     """
@@ -236,7 +296,17 @@ def query_agent(request: QueryRequest, _: None = Depends(require_api_key)):
             embedding_model=request.embedding_model
         )
         
+        graph_context = None
         context_texts = [res["text"] for res in search_results]
+        if request.use_graph_context:
+            graph_context = knowledge_graph_service.query_context(
+                document_id=request.document_id,
+                query=request.query,
+                max_entities=request.graph_max_entities,
+                max_chunks=0,
+            )
+            if graph_context["context_summary"]:
+                context_texts = [f"Knowledge graph context:\n{graph_context['context_summary']}"] + context_texts
         
         # Run agentic generation pipeline
         agent_response = agent_service.run_agent(
@@ -252,6 +322,7 @@ def query_agent(request: QueryRequest, _: None = Depends(require_api_key)):
             "response": agent_response["response"],
             "steps": agent_response["steps"],
             "retrieved_chunks": search_results,
+            "graph_context": graph_context,
             "metrics": agent_response["metrics"]
         }
     except HTTPException:

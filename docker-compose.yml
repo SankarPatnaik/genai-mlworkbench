@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # MinIO - S3 Compatible Object Storage
   minio:
-    image: minio/minio:RELEASE.2024-01-28T22-35-50Z
+    image: minio/minio:latest
     container_name: genai_minio
     ports:
       - "9000:9000" # S3 API
@@ -22,7 +22,7 @@ services:
 
   # PostgreSQL with pgvector
   postgres:
-    image: pgvector/pgvector:16-pg16
+    image: pgvector/pgvector:pg16
     container_name: genai_postgres
     ports:
       - "5432:5432"
@@ -58,7 +58,7 @@ services:
     image: chromadb/chroma:0.4.24
     container_name: genai_chroma
     ports:
-      - "8000:8000"
+      - "8002:8000"
     environment:
       - CHROMA_SERVER_NO_TELEMETRY=True
     volumes:
@@ -74,7 +74,7 @@ services:
     image: ghcr.io/mlflow/mlflow:v2.11.3
     container_name: genai_mlflow
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       - AWS_ACCESS_KEY_ID=minioadmin
       - AWS_SECRET_ACCESS_KEY=minioadminpassword
@@ -92,9 +92,31 @@ services:
       --host 0.0.0.0
       --port 5000
 
+  # Neo4j Knowledge Graph
+  neo4j:
+    image: neo4j:5.20-community
+    container_name: genai_neo4j
+    ports:
+      - "7474:7474" # Browser UI
+      - "7687:7687" # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/workbenchpassword
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1G
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   minio_data:
   postgres_data:
   qdrant_data:
   chroma_data:
   mlflow_data:
+  neo4j_data:
+  neo4j_logs:

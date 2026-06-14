@@ -6,12 +6,26 @@ from typing import List, Dict, Any, Union
 import numpy as np
 
 # Clients
-import chromadb
-from qdrant_client import QdrantClient
-from qdrant_client.http import models as qmodels
-import psycopg2
-from psycopg2 import sql
-from psycopg2.extras import execute_values
+try:
+    import chromadb
+except Exception:
+    chromadb = None
+
+try:
+    from qdrant_client import QdrantClient
+    from qdrant_client.http import models as qmodels
+except Exception:
+    QdrantClient = None
+    qmodels = None
+
+try:
+    import psycopg2
+    from psycopg2 import sql
+    from psycopg2.extras import execute_values
+except Exception:
+    psycopg2 = None
+    sql = None
+    execute_values = None
 
 from app.config import settings
 
@@ -66,6 +80,8 @@ class BaseVectorService:
 # ChromaDB adapter
 class ChromaService(BaseVectorService):
     def __init__(self):
+        if not chromadb:
+            raise RuntimeError("chromadb package is not installed")
         # Local Persistent / Ephemeral Chroma client
         self.client = chromadb.HttpClient(host=settings.CHROMA_HOST, port=settings.CHROMA_PORT)
 
@@ -124,6 +140,8 @@ class ChromaService(BaseVectorService):
 # Qdrant adapter
 class QdrantService(BaseVectorService):
     def __init__(self):
+        if not QdrantClient:
+            raise RuntimeError("qdrant-client package is not installed")
         self.client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
 
     def create_index(self, index_name: str, dimension: int = 384):
@@ -194,6 +212,8 @@ class QdrantService(BaseVectorService):
 # PostgreSQL / pgvector adapter
 class PostgresVectorService(BaseVectorService):
     def __init__(self):
+        if not psycopg2:
+            raise RuntimeError("psycopg2 package is not installed")
         self.conn_str = f"dbname={settings.POSTGRES_DB} user={settings.POSTGRES_USER} password={settings.POSTGRES_PASSWORD} host={settings.POSTGRES_HOST} port={settings.POSTGRES_PORT}"
         self._ensure_extension()
 

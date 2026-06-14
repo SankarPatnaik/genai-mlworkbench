@@ -1,9 +1,17 @@
-import mlflow
 from typing import Dict, Any
+from urllib.request import urlopen
 from app.config import settings
+
+try:
+    import mlflow
+except Exception:
+    mlflow = None
 
 class MLflowService:
     def __init__(self):
+        if not mlflow:
+            print("MLflow package is not installed. Run logging will use local fallback IDs.")
+            return
         try:
             mlflow.set_tracking_uri(settings.MLFLOW_TRACKING_URI)
             mlflow.set_experiment("GenAI_Workbench_Agents")
@@ -16,6 +24,8 @@ class MLflowService:
         Returns the MLflow Run ID.
         """
         run_id = "local_mock_run"
+        if not mlflow:
+            return run_id
         try:
             with mlflow.start_run() as run:
                 run_id = run.info.run_id
@@ -44,6 +54,13 @@ class MLflowService:
         return f"{settings.MLFLOW_TRACKING_URI}/#/experiments/0/runs/{run_id}"
 
     def is_available(self) -> bool:
+        try:
+            with urlopen(f"{settings.MLFLOW_TRACKING_URI}/health", timeout=2) as response:
+                return response.status < 500
+        except Exception:
+            pass
+        if not mlflow:
+            return False
         try:
             mlflow.get_tracking_uri()
             mlflow.search_experiments(max_results=1)

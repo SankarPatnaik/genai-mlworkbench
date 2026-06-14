@@ -7,6 +7,7 @@ A low-code/no-code commercialized blueprint for deploying custom Agentic AI work
 - **Backend:** FastAPI (Python REST API service)
 - **Document Store:** AWS S3 / MinIO (S3-compatible API)
 - **Vector Databases:** PostgreSQL (`pgvector` extension), ChromaDB, Qdrant
+- **Knowledge Graph:** Neo4j with in-memory fallback for local preview
 - **Agent Orchestration:** LangGraph, Google Antigravity SDK, CrewAI
 - **Experiment Tracking:** MLflow Tracking Server
 
@@ -66,9 +67,10 @@ docker compose up -d
 This launches:
 - **MinIO (S3 mockup)** at `http://localhost:9000` (Console at `http://localhost:9001`)
 - **Qdrant Vector DB** at `http://localhost:6333`
-- **ChromaDB** at `http://localhost:8000`
+- **ChromaDB** at `http://localhost:8002`
 - **PostgreSQL (pgvector)** at `http://localhost:5432`
-- **MLflow Tracking Server** at `http://localhost:5000`
+- **Neo4j Knowledge Graph** at `http://localhost:7474` (Bolt at `bolt://localhost:7687`)
+- **MLflow Tracking Server** at `http://localhost:5001`
 
 ### 2. Configure Backend Environment
 Create a `.env` file inside the `backend` directory:
@@ -91,7 +93,12 @@ MAX_UPLOAD_MB=50
 ENVIRONMENT=development
 
 # MLflow Configurations
-MLFLOW_TRACKING_URI=http://localhost:5000
+MLFLOW_TRACKING_URI=http://localhost:5001
+
+# Knowledge Graph
+NEO4J_URI=bolt://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=workbenchpassword
 ```
 
 ### 3. Start the FastAPI Backend
@@ -125,5 +132,6 @@ VITE_WORKBENCH_API_KEY=change-me-before-deploy
 - API-key protection is enabled when `API_KEY` is set on the backend. Replace this with user authentication and tenant-scoped authorization before public SaaS launch.
 - Uploaded documents now receive generated document IDs and namespaced object keys to avoid filename collisions.
 - Vector indexes validate collection names and filter retrieval by `document_id` to avoid cross-document leakage.
+- Knowledge graph context builds entity and relationship maps from chunks, using Neo4j when available and memory fallback otherwise. This helps reduce context cost by sending structured graph summaries before larger text chunks.
 - The current runtime ships local preview embeddings and mock LLM responses. Hosted model adapters should be added with key vaulting, usage limits, audit logs, and billing controls.
 - DOCX/PPTX, Slack, Discord, and web widget delivery are treated as planned connectors until their backend endpoints are implemented.

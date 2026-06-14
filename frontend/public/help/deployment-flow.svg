@@ -1,0 +1,39 @@
+<svg width="960" height="520" viewBox="0 0 960 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="960" height="520" rx="24" fill="#0c1016"/>
+  <rect x="54" y="50" width="852" height="420" rx="20" fill="#131820" stroke="#2a3342"/>
+  <text x="92" y="106" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">Production Deployment Path</text>
+  <text x="92" y="138" fill="#a1a1aa" font-family="Inter, Arial, sans-serif" font-size="16">Move from local review to secured, monitored tenant rollout.</text>
+  <g transform="translate(96 194)">
+    <rect width="154" height="148" rx="14" fill="#1f2937" stroke="#64748b"/>
+    <text x="26" y="48" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Secrets</text>
+    <text x="26" y="78" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">API key</text>
+    <text x="26" y="100" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">LLM keys</text>
+    <text x="26" y="122" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Tenant config</text>
+  </g>
+  <g transform="translate(288 194)">
+    <rect width="154" height="148" rx="14" fill="#1f2937" stroke="#6366f1"/>
+    <text x="26" y="48" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Services</text>
+    <text x="26" y="78" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">API</text>
+    <text x="26" y="100" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Frontend</text>
+    <text x="26" y="122" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Workers</text>
+  </g>
+  <g transform="translate(480 194)">
+    <rect width="154" height="148" rx="14" fill="#1f2937" stroke="#10b981"/>
+    <text x="26" y="48" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Data</text>
+    <text x="26" y="78" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Object store</text>
+    <text x="26" y="100" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Vector DB</text>
+    <text x="26" y="122" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Neo4j graph</text>
+  </g>
+  <g transform="translate(672 194)">
+    <rect width="154" height="148" rx="14" fill="#1f2937" stroke="#f59e0b"/>
+    <text x="26" y="48" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="700">Operate</text>
+    <text x="26" y="78" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Health checks</text>
+    <text x="26" y="100" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Audit logs</text>
+    <text x="26" y="122" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="13">Cost tracking</text>
+  </g>
+  <path d="M252 268H284" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+  <path d="M444 268H476" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+  <path d="M636 268H668" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+  <rect x="92" y="398" width="776" height="36" rx="8" fill="#0f172a" stroke="#263244"/>
+  <text x="114" y="421" fill="#cbd5e1" font-family="Consolas, monospace" font-size="15">Dev → Staging → Production with auth, backups, monitoring, and tenant boundaries</text>
+</svg>

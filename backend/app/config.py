@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # Vector Databases configurations
     # Chroma
     CHROMA_HOST: str = os.getenv("CHROMA_HOST", "localhost")
-    CHROMA_PORT: int = int(os.getenv("CHROMA_PORT", 8000))
+    CHROMA_PORT: int = int(os.getenv("CHROMA_PORT", 8002))
     
     # Qdrant
     QDRANT_HOST: str = os.getenv("QDRANT_HOST", "localhost")
@@ -43,7 +43,12 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", 5432))
 
     # MLflow tracking Config
-    MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+    MLFLOW_TRACKING_URI: str = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5001")
+
+    # Knowledge graph configuration
+    NEO4J_URI: str = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+    NEO4J_USER: str = os.getenv("NEO4J_USER", "neo4j")
+    NEO4J_PASSWORD: str = os.getenv("NEO4J_PASSWORD", "workbenchpassword")
 
     class Config:
         case_sensitive = True

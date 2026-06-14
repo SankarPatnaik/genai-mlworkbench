@@ -3,13 +3,16 @@ import Stepper from './components/Stepper';
 import UploadStep from './components/UploadStep';
 import ChunkingStep from './components/ChunkingStep';
 import VectorStep from './components/VectorStep';
+import GraphStep from './components/GraphStep';
 import AgentStep from './components/AgentStep';
 import PlaygroundStep from './components/PlaygroundStep';
 import DeployStep from './components/DeployStep';
+import HelpGuide from './components/HelpGuide';
 import { apiUrl, apiHeaders } from './api';
 
 export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [activeView, setActiveView] = useState('workbench');
   const [data, setData] = useState({
     documentId: null,
     filename: null,
@@ -24,7 +27,9 @@ export default function App() {
     llmModel: 'local-preview',
     temperature: 0.7,
     topK: 3,
-    indexed: false
+    indexed: false,
+    graphEnabled: false,
+    graphSummary: null,
   });
 
   const [apiStatus, setApiStatus] = useState(null);
@@ -45,6 +50,7 @@ export default function App() {
     { title: "Upload & Convert" },
     { title: "Chunking Settings" },
     { title: "Vector Store" },
+    { title: "Context Graph" },
     { title: "LLM & Prompts" },
     { title: "Playground & Costs" },
     { title: "Deploy & Integrate" }
@@ -71,10 +77,12 @@ export default function App() {
       case 2:
         return <VectorStep data={data} updateData={updateData} />;
       case 3:
-        return <AgentStep data={data} updateData={updateData} />;
+        return <GraphStep data={data} updateData={updateData} />;
       case 4:
-        return <PlaygroundStep data={data} updateData={updateData} />;
+        return <AgentStep data={data} updateData={updateData} />;
       case 5:
+        return <PlaygroundStep data={data} updateData={updateData} />;
+      case 6:
         return <DeployStep data={data} updateData={updateData} />;
       default:
         return <div>Unknown Step</div>;
@@ -90,7 +98,24 @@ export default function App() {
         </div>
         
         {/* API Integration Diagnostics Indicator */}
-        <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem' }}>
+        <div className="header-right">
+          <div className="view-toggle" aria-label="Main navigation">
+            <button
+              type="button"
+              className={activeView === 'workbench' ? 'active' : ''}
+              onClick={() => setActiveView('workbench')}
+            >
+              Workbench
+            </button>
+            <button
+              type="button"
+              className={activeView === 'help' ? 'active' : ''}
+              onClick={() => setActiveView('help')}
+            >
+              Help
+            </button>
+          </div>
+        <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.8rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {apiStatus ? (
             <>
               <span style={{ 
@@ -125,48 +150,63 @@ export default function App() {
               }}>
                 PGVector: {apiStatus.postgres}
               </span>
+              <span style={{
+                color: apiStatus.knowledge_graph === 'neo4j' ? 'var(--success)' : 'var(--muted-foreground)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                padding: '0.25rem 0.5rem',
+                borderRadius: 'var(--radius-sm)'
+              }}>
+                KG: {apiStatus.knowledge_graph}
+              </span>
             </>
           ) : (
             <span style={{ color: 'var(--error)' }}>Backend API Offline</span>
           )}
         </div>
+        </div>
       </header>
 
-      {/* Top Stepper Navigation */}
-      <Stepper 
-        steps={steps} 
-        currentStep={currentStep} 
-        setStep={setCurrentStep} 
-      />
+      {activeView === 'help' ? (
+        <HelpGuide />
+      ) : (
+        <>
+          {/* Top Stepper Navigation */}
+          <Stepper 
+            steps={steps} 
+            currentStep={currentStep} 
+            setStep={setCurrentStep} 
+          />
 
-      {/* Stepper active component content */}
-      <main style={{ flex: 1 }}>
-        {renderStepContent()}
-      </main>
+          {/* Stepper active component content */}
+          <main style={{ flex: 1 }}>
+            {renderStepContent()}
+          </main>
 
-      {/* Stepper Footer Action Buttons */}
-      <div className="step-actions">
-        <button 
-          className="btn btn-secondary" 
-          onClick={handleBack} 
-          disabled={currentStep === 0}
-        >
-          Back
-        </button>
-        
-        <button 
-          className="btn btn-primary" 
-          onClick={handleNext} 
-          disabled={
-            currentStep === steps.length - 1 || 
-            (currentStep === 0 && !data.documentId) ||
-            (currentStep === 1 && data.chunks.length === 0) ||
-            (currentStep === 2 && !data.indexed)
-          }
-        >
-          {currentStep === steps.length - 2 ? "Finish Config" : "Continue"}
-        </button>
-      </div>
+          {/* Stepper Footer Action Buttons */}
+          <div className="step-actions">
+            <button 
+              className="btn btn-secondary" 
+              onClick={handleBack} 
+              disabled={currentStep === 0}
+            >
+              Back
+            </button>
+            
+            <button 
+              className="btn btn-primary" 
+              onClick={handleNext} 
+              disabled={
+                currentStep === steps.length - 1 || 
+                (currentStep === 0 && !data.documentId) ||
+                (currentStep === 1 && data.chunks.length === 0) ||
+                (currentStep === 2 && !data.indexed)
+              }
+            >
+              {currentStep === steps.length - 2 ? "Finish Config" : "Continue"}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
