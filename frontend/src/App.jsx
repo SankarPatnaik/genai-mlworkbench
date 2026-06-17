@@ -18,6 +18,7 @@ export default function App() {
     filename: null,
     text: null,
     totalCharacters: 0,
+    extractionSummary: null,
     chunks: [],
     vectorDb: 'chroma',
     indexName: 'workbench-index',

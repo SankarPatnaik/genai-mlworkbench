@@ -1,9 +1,8 @@
-import io
 import re
 import boto3
 from botocore.exceptions import ClientError
 from app.config import settings
-from pypdf import PdfReader
+from app.services.pdf_extraction_service import pdf_extraction_service
 
 class S3Service:
     def __init__(self):
@@ -63,31 +62,10 @@ class S3Service:
 
     def convert_to_pdf_text(self, filename: str, content: bytes) -> str:
         """
-        Mock implementation of PDF converter. For a production RAG:
-        - If already PDF: extract text using PdfReader.
-        - If HTML/Markdown/TXT: parse and return clean plain text.
-        - If DOCX/PPTX: add a real document parser before enabling in the UI.
+        Backward-compatible plain-text facade over the layout extraction framework.
         """
-        ext = filename.split(".")[-1].lower()
-        
-        if ext == "pdf":
-            try:
-                reader = PdfReader(io.BytesIO(content))
-                text = ""
-                for page in reader.pages:
-                    text += page.extract_text() or ""
-                return text
-            except Exception as e:
-                raise RuntimeError(f"Failed to parse PDF text: {e}")
-                
-        elif ext in ["txt", "md", "csv"]:
-            return content.decode("utf-8", errors="ignore")
-            
-        elif ext == "html":
-            return content.decode("utf-8", errors="ignore")
-            
-        else:
-            raise ValueError(f"Unsupported document format: .{ext}")
+        extraction = pdf_extraction_service.extract_document(filename, content)
+        return extraction["text"]
 
 def safe_filename(filename: str) -> str:
     name = filename.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]

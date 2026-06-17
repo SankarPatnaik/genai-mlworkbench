@@ -10,6 +10,7 @@ from typing import List, Dict, Any, Optional
 # Service imports
 from app.config import settings
 from app.services.s3_service import s3_service, safe_filename
+from app.services.pdf_extraction_service import pdf_extraction_service
 from app.services.chunking_service import chunking_service
 from app.services.vector_service import VectorServiceFactory, validate_index_name
 from app.services.agent_service import agent_service
@@ -149,8 +150,9 @@ async def upload_document(file: UploadFile = File(...), _: None = Depends(requir
         # Save to S3/Minio
         s3_key = s3_service.upload_file(contents, object_key)
         
-        # Convert and extract text
-        extracted_text = s3_service.convert_to_pdf_text(filename, contents)
+        # Extract layout-preserving text and page structure.
+        extraction = pdf_extraction_service.extract_document(filename, contents)
+        extracted_text = extraction["text"]
         if not extracted_text.strip():
             raise ValueError("No readable text was extracted from this document")
         
@@ -158,21 +160,49 @@ async def upload_document(file: UploadFile = File(...), _: None = Depends(requir
         session_store[document_id] = {
             "s3_key": s3_key,
             "text": extracted_text,
+            "layout_text": extraction["layout_text"],
+            "markdown": extraction["markdown"],
+            "extraction": extraction,
             "filename": filename,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         
+        extraction_summary = {
+            "profile": extraction["metadata"]["profile"],
+            "page_count": extraction["metadata"]["page_count"],
+            "parser_chain": extraction["metadata"]["parser_chain"],
+            "layout_preserved": extraction["metadata"]["layout_preserved"],
+            "element_count": extraction["metadata"]["element_count"],
+            "low_confidence_ocr_elements": extraction["metadata"]["low_confidence_ocr_elements"],
+            "warnings": extraction["warnings"][:5],
+        }
+
         return {
             "document_id": document_id,
             "filename": filename,
             "s3_key": s3_key,
             "text_preview": extracted_text[:800],
-            "total_characters": len(extracted_text)
+            "total_characters": len(extracted_text),
+            "extraction_summary": extraction_summary,
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+@app.get(f"{settings.API_V1_STR}/documents/{{document_id}}/layout")
+def get_document_layout(document_id: str, _: None = Depends(require_api_key)):
+    """
+    Retrieve the full layout-preserving extraction artifact for a document.
+    """
+    doc = session_store.get(document_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document ID not found in session")
+    return {
+        "document_id": document_id,
+        "filename": doc["filename"],
+        "extraction": doc["extraction"],
+    }
 
 @app.post(f"{settings.API_V1_STR}/chunk")
 def chunk_document(request: ChunkRequest, _: None = Depends(require_api_key)):

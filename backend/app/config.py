@@ -13,6 +13,19 @@ class Settings(BaseSettings):
     API_KEY: str = os.getenv("API_KEY", "")
     MAX_UPLOAD_MB: int = int(os.getenv("MAX_UPLOAD_MB", 50))
     ALLOWED_ORIGINS: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173")
+
+    # PDF/OCR extraction configuration
+    PDF_EXTRACTION_STRATEGY: str = os.getenv("PDF_EXTRACTION_STRATEGY", "auto").lower()
+    PDF_RENDER_DPI: int = int(os.getenv("PDF_RENDER_DPI", 220))
+    PDF_MAX_PAGES: int = int(os.getenv("PDF_MAX_PAGES", 1000))
+    PDF_MIN_TEXT_CHARS_PER_PAGE: int = int(os.getenv("PDF_MIN_TEXT_CHARS_PER_PAGE", 24))
+    PDF_LAYOUT_COLUMNS: int = int(os.getenv("PDF_LAYOUT_COLUMNS", 120))
+    PDF_MAX_LEADING_SPACES: int = int(os.getenv("PDF_MAX_LEADING_SPACES", 16))
+    PDF_OCR_LANG: str = os.getenv("PDF_OCR_LANG", "en")
+    PDF_OCR_DEVICE: str = os.getenv("PDF_OCR_DEVICE", "cpu")
+    PDF_OCR_ENGINE: str = os.getenv("PDF_OCR_ENGINE", "")
+    PDF_OCR_MIN_CONFIDENCE: float = float(os.getenv("PDF_OCR_MIN_CONFIDENCE", 0.60))
+    PDF_USE_PADDLE_STRUCTURE: bool = os.getenv("PDF_USE_PADDLE_STRUCTURE", "false").lower() in {"1", "true", "yes"}
     
     # LLM Provider Keys
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")

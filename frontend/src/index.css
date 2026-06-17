@@ -25,6 +25,7 @@
   --accent-foreground: #ffffff;
   
   --success: #10b981; /* Green */
+  --warning: #f59e0b; /* Amber */
   --error: #ef4444; /* Red */
   --border: rgba(255, 255, 255, 0.08);
   

@@ -8,6 +8,7 @@ A low-code/no-code commercialized blueprint for deploying custom Agentic AI work
 - **Document Store:** AWS S3 / MinIO (S3-compatible API)
 - **Vector Databases:** PostgreSQL (`pgvector` extension), ChromaDB, Qdrant
 - **Knowledge Graph:** Neo4j with in-memory fallback for local preview
+- **PDF/OCR Extraction:** LiteParse, pdfplumber, PyMuPDF rendering, PaddleOCR
 - **Agent Orchestration:** LangGraph, Google Antigravity SDK, CrewAI
 - **Experiment Tracking:** MLflow Tracking Server
 
@@ -92,6 +93,19 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 MAX_UPLOAD_MB=50
 ENVIRONMENT=development
 
+# Layout-preserving PDF extraction
+PDF_EXTRACTION_STRATEGY=auto
+PDF_RENDER_DPI=220
+PDF_MAX_PAGES=1000
+PDF_MIN_TEXT_CHARS_PER_PAGE=24
+PDF_LAYOUT_COLUMNS=120
+PDF_MAX_LEADING_SPACES=16
+PDF_OCR_LANG=en
+PDF_OCR_DEVICE=cpu
+PDF_OCR_ENGINE=
+PDF_OCR_MIN_CONFIDENCE=0.60
+PDF_USE_PADDLE_STRUCTURE=false
+
 # MLflow Configurations
 MLFLOW_TRACKING_URI=http://localhost:5001
 
@@ -131,6 +145,14 @@ VITE_WORKBENCH_API_KEY=change-me-before-deploy
 
 - API-key protection is enabled when `API_KEY` is set on the backend. Replace this with user authentication and tenant-scoped authorization before public SaaS launch.
 - Uploaded documents now receive generated document IDs and namespaced object keys to avoid filename collisions.
+- PDF uploads run through a layout-first extraction framework:
+  - LiteParse reads native PDF text items and coordinates.
+  - pdfplumber enriches fallback text and table detection.
+  - PyMuPDF renders pages that need OCR.
+  - PaddleOCR extracts scanned or low-text pages and merges OCR boxes back into page coordinates.
+  - `/api/v1/documents/{document_id}/layout` returns the retained page, element, bbox, confidence, Markdown, and parser-chain artifact.
+- `PDF_EXTRACTION_STRATEGY` supports `auto`, `digital`, `ocr`, and `hybrid`. Use `auto` for normal ingestion, `hybrid` for high-stakes audits where every page should be OCR-checked, and `digital` when PaddleOCR/model startup cost is not acceptable.
+- `PDF_USE_PADDLE_STRUCTURE=true` enables PP-StructureV3 document Markdown extraction for richer scanned table/layout parsing. It can download additional PaddleOCR models on first use.
 - Vector indexes validate collection names and filter retrieval by `document_id` to avoid cross-document leakage.
 - Knowledge graph context builds entity and relationship maps from chunks, using Neo4j when available and memory fallback otherwise. This helps reduce context cost by sending structured graph summaries before larger text chunks.
 - The current runtime ships local preview embeddings and mock LLM responses. Hosted model adapters should be added with key vaulting, usage limits, audit logs, and billing controls.

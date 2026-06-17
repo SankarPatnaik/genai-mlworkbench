@@ -51,6 +51,7 @@ export default function UploadStep({ data, updateData, onNext }) {
         filename: result.filename,
         text: result.text_preview,
         totalCharacters: result.total_characters,
+        extractionSummary: result.extraction_summary,
         rawText: result.text_preview // Simple fallback context limit
       });
       setSuccess(true);
@@ -109,6 +110,55 @@ export default function UploadStep({ data, updateData, onNext }) {
         {error && (
           <div style={{ marginTop: '1rem', color: 'var(--error)', fontSize: '0.9rem' }}>
             {error}
+          </div>
+        )}
+
+        {data.extractionSummary && (
+          <div style={{
+            marginTop: '1rem',
+            display: 'grid',
+            gap: '0.65rem',
+            padding: '1rem',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            background: 'rgba(255, 255, 255, 0.04)',
+            fontSize: '0.85rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+              <span style={{ color: 'var(--muted-foreground)' }}>Profile</span>
+              <span style={{ fontWeight: 600 }}>{data.extractionSummary.profile}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+              <span style={{ color: 'var(--muted-foreground)' }}>Pages</span>
+              <span>{data.extractionSummary.page_count}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+              <span style={{ color: 'var(--muted-foreground)' }}>Layout elements</span>
+              <span>{data.extractionSummary.element_count}</span>
+            </div>
+            <div>
+              <div style={{ color: 'var(--muted-foreground)', marginBottom: '0.35rem' }}>Engines</div>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                {data.extractionSummary.parser_chain.map((engine) => (
+                  <span
+                    key={engine}
+                    style={{
+                      padding: '0.2rem 0.45rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'rgba(255, 255, 255, 0.06)',
+                      color: 'var(--secondary-foreground)'
+                    }}
+                  >
+                    {engine}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {data.extractionSummary.warnings.length > 0 && (
+              <div style={{ color: 'var(--warning)' }}>
+                {data.extractionSummary.warnings[0]}
+              </div>
+            )}
           </div>
         )}
       </div>
